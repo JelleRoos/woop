@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="nl">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bordspel Editor</title>
+    <link rel="stylesheet" href="style.css" />
+    <link href="https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <section id="intro-blok">
+        <h1 class="titel">🧩 Bordspel Editor</h1>
+
+        <div class="uitleg-blok">
+            <h2>Hoe werkt het?</h2>
+            <ul>
+                <li>Sleep obstakels vanuit de linkerkant het bord op.</li>
+                <li>Sleep een obstakel naar de prullenbak om het te verwijderen.</li>
+                <li>Sleep een kaartje (rechts) op het bord om hulp of ideeën toe te voegen.</li>
+                <li>Gebruik het scrollwiel op een obstakel om deze te vergroten of verkleinen.</li>
+            </ul>
+        </div>
+
+        <div class="faq">
+            <h2>Veelgestelde vragen</h2>
+
+            <details>
+                <summary>Kan ik het bord exporteren of opslaan?</summary>
+                <p>Ja! Je kunt op de exportknop klikken om een JSON-bestand op te slaan. Later kun je dit importeren om
+                    je bord terug te halen.</p>
+            </details>
+
+            <details>
+                <summary>Kan ik mijn obstakels aanpassen?</summary>
+                <p>Ja, je kunt op de tekst onder een obstakel klikken om deze aan te passen. Ook kun je met het
+                    scrollwiel de grootte aanpassen.</p>
+            </details>
+            <details>
+                <summary>Grotere plaatjes zijn moeilijk te plaatsen, hoe kan dat?</summary>
+                <p>Grote afbeeldingen vallen sneller over andere vakken heen. Een slimmere oplossing zou een echte
+                    render-engine vergen — maar die heb ik (nog) niet gebouwd, want ik ben geen programmeur 😉.
+                </p>
+            </details>
+
+            <details>
+                <summary>Kan ik meerdere kaarten toevoegen?</summary>
+                <p>Jazeker! Je kunt meerdere kaarten van verschillende kleuren toevoegen en vrij over het scherm slepen.
+                </p>
+            </details>
+        </div>
+    </section>
+    <!-- EINDE: Titel, uitleg en FAQ sectie -->
+    <div id="sidebar">
+
+
+        <div id="toolbox">
+            <div class="tool" draggable="true" data-type="berg">
+                <img src="img/berg.png" alt="Berg" class="tool-icon" />
+                <div class="tool-label">Berg</div>
+            </div>
+            <div class="tool" draggable="true" data-type="bos">
+                <img src="img/bos.png" alt="Bos" class="tool-icon" />
+                <div class="tool-label">Bos</div>
+            </div>
+            <div class="tool" draggable="true" data-type="moeras">
+                <img src="img/moeras.png" alt="Moeras" class="tool-icon" />
+                <div class="tool-label">Moeras</div>
+            </div>
+            <div class="tool" draggable="true" data-type="orc">
+                <img src="img/orc.png" alt="Orc" class="tool-icon" />
+                <div class="tool-label">Orc</div>
+            </div>
+            <div class="tool" draggable="true" data-type="brug">
+                <img src="img/brug.png" alt="Brug" class="tool-icon" />
+                <div class="tool-label">Brug</div>
+            </div>
+            <div class="tool" draggable="true" data-type="muur">
+                <img src="img/muur.png" alt="Muur" class="tool-icon" />
+                <div class="tool-label">Muur</div>
+            </div>
+        </div>
+
+        <div id="trash">
+            <div class="trash-icon">🗑️</div>
+            <div class="trash-label">prullenbak</div>
+        </div>
+
+
+    </div>
+
+    <div id="grid"></div>
+
+    <div id="kaart-toolbox">
+        <div class="kaart-template kaart-geel" draggable="true" data-kleur="kaart-geel" data-icoon="vraag">
+            <div class="kaart-icoon">❓</div>
+            <div class="kaart-tekst">Vraagkaart</div>
+        </div>
+        <div class="kaart-template kaart-groen" draggable="true" data-kleur="kaart-groen" data-icoon="idee">
+            <div class="kaart-icoon">💡</div>
+            <div class="kaart-tekst">Ideekaart</div>
+        </div>
+        <div class="kaart-template kaart-rood" draggable="true" data-kleur="kaart-rood" data-icoon="letop">
+            <div class="kaart-icoon">⚠️</div>
+            <div class="kaart-tekst">Let op kaart</div>
+        </div>
+        <div class="kaart-template kaart-blauw" draggable="true" data-kleur="kaart-blauw" data-icoon="hulp">
+            <div class="kaart-icoon">🫴</div>
+            <div class="kaart-tekst">Hulpkaart</div>
+        </div>
+    </div>
+
+    <div id="data-controls">
+        <button id="exportBtn">💾 Exporteer bord</button>
+        <input type="file" id="importInput" style="display: none" />
+        <button id="importBtn">📂 Importeer bord</button>
+    </div>
+
+
+
+
+
+    <script src="script.js"></script>
+</body>
+
+</html>
