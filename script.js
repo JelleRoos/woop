@@ -349,3 +349,69 @@ document.getElementById('importInput').addEventListener('change', (e) => {
 
     reader.readAsText(file);
 });
+
+document.getElementById('addGridBtn').addEventListener('click', voegExtraGridToe);
+function voegExtraGridToe() {
+    const gridContainer = document.getElementById('grid-container');
+
+    const nieuwGrid = document.createElement('div');
+    nieuwGrid.className = 'extra-grid'; // stijl apart als je wilt
+    nieuwGrid.style.position = 'relative';
+    nieuwGrid.style.width = '800px';
+    nieuwGrid.style.height = '800px';
+    nieuwGrid.style.display = 'grid';
+    nieuwGrid.style.gridTemplateColumns = 'repeat(10, 80px)';
+    nieuwGrid.style.gridTemplateRows = 'repeat(10, 80px)';
+    nieuwGrid.style.gap = '1px';
+    nieuwGrid.style.background = "url('img/map.png')";
+    nieuwGrid.style.backgroundSize = 'cover';
+    nieuwGrid.style.backgroundPosition = 'center';
+
+    const gridSize = 10;
+    for (let i = 0; i < gridSize * gridSize; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        nieuwGrid.appendChild(cell);
+    }
+
+    // Events opnieuw toewijzen
+    nieuwGrid.querySelectorAll('.cell').forEach(cell => {
+        cell.addEventListener('dragover', (e) => e.preventDefault());
+
+        cell.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const id = e.dataTransfer.getData('text/plain');
+            const draggedElement = document.getElementById(id);
+
+            if (draggedElement && draggedElement.classList.contains('obstacle')) {
+                const mouseX = e.pageX - nieuwGrid.offsetLeft;
+                const mouseY = e.pageY - nieuwGrid.offsetTop;
+                draggedElement.style.left = `${mouseX - 40}px`;
+                draggedElement.style.top = `${mouseY - 40}px`;
+                return;
+            }
+
+            if (id === 'kaart') return;
+
+            const type = id;
+            plaatsObstakel(cell, type);
+        });
+    });
+
+    gridContainer.prepend(nieuwGrid); // zet de nieuwe grid bovenaan
+}
+
+document.getElementById('removeGridBtn').addEventListener('click', verwijderBovensteGrid);
+
+function verwijderBovensteGrid() {
+    const gridContainer = document.getElementById('grid-container');
+    const alleGrids = gridContainer.querySelectorAll('.extra-grid');
+
+    if (alleGrids.length === 0) {
+        alert('Er zijn geen extra grids meer om te verwijderen.');
+        return;
+    }
+
+    const bovenste = alleGrids[alleGrids.length - 1]; // de laatst toegevoegde (bovenste in de container)
+    bovenste.remove();
+}

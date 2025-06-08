@@ -10,10 +10,93 @@
 </head>
 
 <body>
-    <section id="intro-blok">
+    <!-- HEADER -->
+    <header id="editor-header">
         <h1 class="titel">Visuele WOOP</h1>
-        <h2>Tool om je woop te visualiseren</h2>
+        <h2 class="subtitel">Tool om je woop te visualiseren</h2>
+    </header>
 
+    <!-- EDITOR LAYOUT: 3 KOLOMMEN -->
+    <main class="editor-layout">
+
+        <!-- LINKERKOLOM: TOOLBOX + PRULLENBAK -->
+        <aside id="sidebar">
+            <div id="toolbox">
+                <div class="tool" draggable="true" data-type="berg">
+                    <img src="img/berg.png" alt="Berg" class="tool-icon" />
+                    <div class="tool-label">Berg</div>
+                </div>
+                <div class="tool" draggable="true" data-type="bos">
+                    <img src="img/bos.png" alt="Bos" class="tool-icon" />
+                    <div class="tool-label">Bos</div>
+                </div>
+                <div class="tool" draggable="true" data-type="moeras">
+                    <img src="img/moeras.png" alt="Moeras" class="tool-icon" />
+                    <div class="tool-label">Moeras</div>
+                </div>
+                <div class="tool" draggable="true" data-type="orc">
+                    <img src="img/orc.png" alt="Orc" class="tool-icon" />
+                    <div class="tool-label">Orc</div>
+                </div>
+                <div class="tool" draggable="true" data-type="brug">
+                    <img src="img/brug.png" alt="Brug" class="tool-icon" />
+                    <div class="tool-label">Brug</div>
+                </div>
+                <div class="tool" draggable="true" data-type="muur">
+                    <img src="img/muur.png" alt="Muur" class="tool-icon" />
+                    <div class="tool-label">Muur</div>
+                </div>
+            </div>
+
+            <div id="trash">
+                <div class="trash-icon">🗑️</div>
+                <div class="trash-label">prullenbak</div>
+            </div>
+        </aside>
+
+        <!-- MIDDEKOLOM: GRID + KNOPPEN -->
+        <section id="grid-wrapper">
+            <div id="extraGridControls">
+                <button id="addGridBtn">➕ Extra grid erboven</button>
+                <button id="removeGridBtn">🗑️ Verwijder bovenste grid</button>
+            </div>
+
+            <div id="grid-container">
+                <div id="grid"></div>
+            </div>
+
+
+        </section>
+
+        <!-- RECHTERKOLOM: KAARTEN -->
+        <aside id="kaart-toolbox">
+            <div class="kaart-template kaart-geel" draggable="true" data-kleur="kaart-geel" data-icoon="vraag">
+                <div class="kaart-icoon">❓</div>
+                <div class="kaart-tekst">Vraagkaart</div>
+            </div>
+            <div class="kaart-template kaart-groen" draggable="true" data-kleur="kaart-groen" data-icoon="idee">
+                <div class="kaart-icoon">💡</div>
+                <div class="kaart-tekst">Ideekaart</div>
+            </div>
+            <div class="kaart-template kaart-rood" draggable="true" data-kleur="kaart-rood" data-icoon="letop">
+                <div class="kaart-icoon">⚠️</div>
+                <div class="kaart-tekst">Let op kaart</div>
+            </div>
+            <div class="kaart-template kaart-blauw" draggable="true" data-kleur="kaart-blauw" data-icoon="hulp">
+                <div class="kaart-icoon">🫴</div>
+                <div class="kaart-tekst">Hulpkaart</div>
+            </div>
+        </aside>
+
+    </main>
+
+    <!-- UITLEG EN FAQ ONDERAAN -->
+    <section id="uitleg-en-faq">
+        <div id="data-controls">
+            <button id="exportBtn">📎 Exporteer bord</button>
+            <input type="file" id="importInput" style="display: none" />
+            <button id="importBtn">📂 Importeer bord</button>
+        </div>
         <div class="uitleg-blok">
             <h2>Hoe werkt het?</h2>
             <ul>
@@ -24,19 +107,18 @@
             </ul>
         </div>
 
-        <div class="faq">
+        <section class="faq">
             <h2>Veelgestelde vragen</h2>
             <details>
                 <summary>He, dit werkt helemaal niet op mobiel?</summary>
                 <p>Klopt, ik ben namelijk geen developer, dus ik rommel maar wat aan. Dit werkt alleen op desktop met
-                    slepen van afbeeldingen. </p>
+                    slepen van afbeeldingen.</p>
             </details>
             <details>
                 <summary>Kan ik het bord exporteren of opslaan?</summary>
                 <p>Ja! Je kunt op de exportknop klikken om een JSON-bestand op te slaan. Later kun je dit importeren om
                     je bord terug te halen.</p>
             </details>
-
             <details>
                 <summary>Kan ik mijn obstakels aanpassen?</summary>
                 <p>Ja, je kunt op de tekst onder een obstakel klikken om deze aan te passen. Ook kun je met het
@@ -45,87 +127,15 @@
             <details>
                 <summary>Grotere plaatjes zijn moeilijk te plaatsen, hoe kan dat?</summary>
                 <p>Grote afbeeldingen vallen sneller over andere vakken heen. Een slimmere oplossing zou een echte
-                    render-engine vergen — maar die heb ik (nog) niet gebouwd, want ik ben geen programmeur 😉.
-                </p>
+                    render-engine vergen — maar die heb ik (nog) niet gebouwd, want ik ben geen programmeur 😉.</p>
             </details>
-
             <details>
                 <summary>Kan ik meerdere kaarten toevoegen?</summary>
                 <p>Jazeker! Je kunt meerdere kaarten van verschillende kleuren toevoegen en vrij over het scherm slepen.
-                    Deze kaarten kun je ook verwijderen door ze naar de prullenbak te slepen.
-                </p>
+                    Deze kaarten kun je ook verwijderen door ze naar de prullenbak te slepen.</p>
             </details>
-        </div>
+        </section>
     </section>
-    <!-- EINDE: Titel, uitleg en FAQ sectie -->
-    <div id="sidebar">
-
-
-        <div id="toolbox">
-            <div class="tool" draggable="true" data-type="berg">
-                <img src="img/berg.png" alt="Berg" class="tool-icon" />
-                <div class="tool-label">Berg</div>
-            </div>
-            <div class="tool" draggable="true" data-type="bos">
-                <img src="img/bos.png" alt="Bos" class="tool-icon" />
-                <div class="tool-label">Bos</div>
-            </div>
-            <div class="tool" draggable="true" data-type="moeras">
-                <img src="img/moeras.png" alt="Moeras" class="tool-icon" />
-                <div class="tool-label">Moeras</div>
-            </div>
-            <div class="tool" draggable="true" data-type="orc">
-                <img src="img/orc.png" alt="Orc" class="tool-icon" />
-                <div class="tool-label">Orc</div>
-            </div>
-            <div class="tool" draggable="true" data-type="brug">
-                <img src="img/brug.png" alt="Brug" class="tool-icon" />
-                <div class="tool-label">Brug</div>
-            </div>
-            <div class="tool" draggable="true" data-type="muur">
-                <img src="img/muur.png" alt="Muur" class="tool-icon" />
-                <div class="tool-label">Muur</div>
-            </div>
-        </div>
-
-        <div id="trash">
-            <div class="trash-icon">🗑️</div>
-            <div class="trash-label">prullenbak</div>
-        </div>
-
-
-    </div>
-
-    <div id="grid"></div>
-
-    <div id="kaart-toolbox">
-        <div class="kaart-template kaart-geel" draggable="true" data-kleur="kaart-geel" data-icoon="vraag">
-            <div class="kaart-icoon">❓</div>
-            <div class="kaart-tekst">Vraagkaart</div>
-        </div>
-        <div class="kaart-template kaart-groen" draggable="true" data-kleur="kaart-groen" data-icoon="idee">
-            <div class="kaart-icoon">💡</div>
-            <div class="kaart-tekst">Ideekaart</div>
-        </div>
-        <div class="kaart-template kaart-rood" draggable="true" data-kleur="kaart-rood" data-icoon="letop">
-            <div class="kaart-icoon">⚠️</div>
-            <div class="kaart-tekst">Let op kaart</div>
-        </div>
-        <div class="kaart-template kaart-blauw" draggable="true" data-kleur="kaart-blauw" data-icoon="hulp">
-            <div class="kaart-icoon">🫴</div>
-            <div class="kaart-tekst">Hulpkaart</div>
-        </div>
-    </div>
-
-    <div id="data-controls">
-        <button id="exportBtn">💾 Exporteer bord</button>
-        <input type="file" id="importInput" style="display: none" />
-        <button id="importBtn">📂 Importeer bord</button>
-    </div>
-
-
-
-
 
     <script src="script.js"></script>
 </body>
