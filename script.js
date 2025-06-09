@@ -164,13 +164,24 @@ function setupTrash() {
     trash.addEventListener("drop", (e) => {
         e.preventDefault();
         trash.style.backgroundColor = "#fee";
+
         const id = e.dataTransfer.getData("text/plain");
         const el = document.getElementById(id);
-        if (el?.classList.contains("obstacle") || el?.classList.contains("kaart-instance")) {
+
+        if (!el) {
+            console.warn("🧯 Geen element gevonden voor ID:", id);
+            return;
+        }
+
+        if (el.classList.contains("obstacle") || el.classList.contains("kaart-instance")) {
+            console.log("🗑️ Element verwijderd:", el.id);
             el.remove();
+        } else {
+            console.warn("📛 Element niet verwijderbaar:", el);
         }
     });
 }
+
 
 // 🔀 Drag & drop handlers voor grid cellen
 function voegDropHandlersToe(cell) {
@@ -257,17 +268,29 @@ function plaatsKaart(e) {
         vraag: '❓',
         idee: '💡',
         hulp: '🫴',
-        letop: '⚠️'
+        letop: '⚠️',
+        start: '🚩',
+        doel: '🏁'
     }[icoonType] || '🔍';
+
 
     const tekst = document.createElement('div');
     tekst.className = 'kaart-tekst';
     tekst.contentEditable = true;
-    tekst.textContent = 'Dubbelklik om te bewerken';
+    tekst.textContent =
+        icoonType === 'start' ? 'Vanaf dit punt start je' :
+            icoonType === 'doel' ? 'waar werk je naartoe' :
+                'Dubbelklik om te bewerken';
+
 
     kaart.appendChild(icoon);
     kaart.appendChild(tekst);
     document.body.appendChild(kaart);
+    kaart.setAttribute('draggable', true);
+    kaart.addEventListener('dragstart', e => {
+        e.dataTransfer.setData("text/plain", kaart.id);
+    });
+
 }
 
 // 🎯 Kaarten verslepen

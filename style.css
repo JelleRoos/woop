@@ -267,6 +267,16 @@ body {
     width: 100%;
 }
 
+.kaart-start {
+    background-color: #ffe599;
+    border: 2px solid #cc9900;
+}
+
+.kaart-doel {
+    background-color: #cfe2f3;
+    border: 2px solid #3d85c6;
+}
+
 .kaart-geel {
     background-color: #fff8d6;
 }
