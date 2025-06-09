@@ -1,8 +1,6 @@
-// script.js
-
 const grid = document.getElementById('grid');
 const gridSize = 10;
-let aantalRijen = 10; // begint bij 10
+let aantalRijen = 10;
 const geschiedenis = [];
 
 const obstacleImages = {
@@ -16,18 +14,19 @@ const obstacleImages = {
 };
 
 function plaatsObstakel(cel, type, vergrendeld = false, col = null, row = null) {
+    console.log('plaatsObstakel:', type);
+
     const item = document.createElement('div');
     item.className = 'obstacle';
 
     const id = 'obstacle-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
     item.setAttribute('id', id);
     item.dataset.scale = '1';
+    item.style.position = 'absolute';
 
-    // Startgrootte obstakel
     const baseSize = 120;
     item.style.width = `${baseSize}px`;
     item.style.height = `${baseSize}px`;
-    item.style.position = 'absolute';
 
     if (vergrendeld) {
         item.classList.add('locked');
@@ -37,7 +36,6 @@ function plaatsObstakel(cel, type, vergrendeld = false, col = null, row = null) 
         item.setAttribute('draggable', true);
     }
 
-    // Voeg afbeelding toe als type bekend is
     if (obstacleImages[type]) {
         const img = document.createElement('img');
         img.src = obstacleImages[type];
@@ -46,15 +44,13 @@ function plaatsObstakel(cel, type, vergrendeld = false, col = null, row = null) 
         item.appendChild(img);
     }
 
-    // Voeg tekst toe
     const tekst = document.createElement('div');
     tekst.className = 'obstacle-tekst';
     tekst.textContent = type;
     if (!vergrendeld) tekst.contentEditable = true;
-    tekst.setAttribute('draggable', false); // voorkomt slepen van tekst
+    tekst.setAttribute('draggable', false);
     item.appendChild(tekst);
 
-    // Coördinaten berekenen (indien nodig)
     let targetRow = row;
     let targetCol = col;
 
@@ -62,15 +58,20 @@ function plaatsObstakel(cel, type, vergrendeld = false, col = null, row = null) 
         const cellIndex = Array.from(grid.children).indexOf(cel);
         targetRow = Math.floor(cellIndex / gridSize);
         targetCol = cellIndex % gridSize;
+    } else if (col === null && row === null) {
+        const rect = grid.getBoundingClientRect();
+        const mouseX = window.lastDropX - rect.left;
+        const mouseY = window.lastDropY - rect.top;
+        targetCol = Math.floor(mouseX / 80);
+        targetRow = Math.floor(mouseY / 80);
     }
 
     item.style.left = `${targetCol * 80}px`;
     item.style.top = `${targetRow * 80}px`;
-
     grid.appendChild(item);
 
-    // Dragstart event: alleen obstakel-id meesturen
-    if (!vergrendeld) {
+    if (!vergrendeld && !item.hasAttribute('data-init')) {
+        item.setAttribute('data-init', 'true');
         item.addEventListener('dragstart', (e) => {
             if (!e.target.classList.contains('obstacle')) {
                 e.preventDefault();
@@ -81,14 +82,40 @@ function plaatsObstakel(cel, type, vergrendeld = false, col = null, row = null) 
     }
 }
 
-
 for (let i = 0; i < gridSize * gridSize; i++) {
     const cell = document.createElement('div');
     cell.className = 'cell';
     grid.appendChild(cell);
 }
 
+function voegDropHandlersToe(cell) {
+    cell.addEventListener('dragover', (e) => e.preventDefault());
+    cell.addEventListener('drop', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const id = e.dataTransfer.getData('text/plain');
+        const draggedElement = document.getElementById(id);
 
+        window.lastDropX = e.clientX;
+        window.lastDropY = e.clientY;
+
+        if (draggedElement && draggedElement.classList.contains('obstacle')) {
+            const rect = grid.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            const col = Math.floor(mouseX / 80);
+            const row = Math.floor(mouseY / 80);
+            draggedElement.style.left = `${col * 80}px`;
+            draggedElement.style.top = `${row * 80}px`;
+            return;
+        }
+
+        if (id === 'kaart') return;
+        plaatsObstakel(cell, id);
+    });
+}
+
+grid.querySelectorAll('.cell').forEach(voegDropHandlersToe);
 
 document.querySelectorAll('.tool').forEach(tool => {
     tool.addEventListener('dragstart', e => {
@@ -96,41 +123,37 @@ document.querySelectorAll('.tool').forEach(tool => {
     });
 });
 
-grid.querySelectorAll('.cell').forEach(cell => {
-    cell.addEventListener('dragover', (e) => e.preventDefault());
+grid.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const id = e.dataTransfer.getData('text/plain');
+    const draggedElement = document.getElementById(id);
 
-    cell.addEventListener('drop', (e) => {
-        e.preventDefault();
-        const id = e.dataTransfer.getData('text/plain');
-        const draggedElement = document.getElementById(id);
+    window.lastDropX = e.clientX;
+    window.lastDropY = e.clientY;
 
-        if (draggedElement && draggedElement.classList.contains('obstacle')) {
-            const mouseX = e.pageX - grid.offsetLeft;
-            const mouseY = e.pageY - grid.offsetTop;
+    if (draggedElement && draggedElement.classList.contains('obstacle')) {
+        const rect = grid.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        const col = Math.floor(mouseX / 80);
+        const row = Math.floor(mouseY / 80);
+        draggedElement.style.left = `${col * 80}px`;
+        draggedElement.style.top = `${row * 80}px`;
+        return;
+    }
 
-            draggedElement.style.left = `${mouseX - 40}px`;
-            draggedElement.style.top = `${mouseY - 40}px`;
-            return;
-        }
-
-        if (id === 'kaart') return;
-
-        const type = id;
-        plaatsObstakel(cell, type);
-    });
+    if (id === 'kaart') return;
+    plaatsObstakel(null, id);
 });
 
 const trash = document.getElementById("trash");
-
 trash.addEventListener("dragover", (e) => {
     e.preventDefault();
     trash.style.backgroundColor = "#faa";
 });
-
 trash.addEventListener("dragleave", () => {
     trash.style.backgroundColor = "#fee";
 });
-
 trash.addEventListener("drop", (e) => {
     e.preventDefault();
     trash.style.backgroundColor = "#fee";
@@ -143,7 +166,6 @@ trash.addEventListener("drop", (e) => {
         document.querySelectorAll('.kaart-instance').forEach(kaart => {
             const kaartRect = kaart.getBoundingClientRect();
             const trashRect = trash.getBoundingClientRect();
-
             if (
                 kaartRect.right > trashRect.left &&
                 kaartRect.left < trashRect.right &&
@@ -156,8 +178,7 @@ trash.addEventListener("drop", (e) => {
     }
 });
 
-const kaartTemplate = document.querySelectorAll('.kaart-template');
-kaartTemplate.forEach(template => {
+document.querySelectorAll('.kaart-template').forEach(template => {
     template.addEventListener('dragstart', e => {
         e.dataTransfer.setData('text/plain', 'kaart');
         e.dataTransfer.setData('kleur', template.dataset.kleur);
@@ -175,7 +196,6 @@ document.addEventListener('drop', e => {
     const kaart = document.createElement('div');
     kaart.className = `kaart-instance ${kleurClass}`;
     kaart.setAttribute('id', 'kaart-' + Date.now());
-    kaart.setAttribute('contenteditable', 'false');
 
     const icoon = document.createElement('div');
     icoon.className = 'kaart-icoon';
@@ -184,8 +204,8 @@ document.addEventListener('drop', e => {
             : icoonType === 'hulp' ? '🫴'
                 : icoonType === 'letop' ? '⚠️'
                     : '🔍';
-
     kaart.appendChild(icoon);
+
     const tekstvak = document.createElement('div');
     tekstvak.className = 'kaart-tekst';
     tekstvak.setAttribute('contenteditable', 'true');
@@ -193,14 +213,11 @@ document.addEventListener('drop', e => {
     kaart.appendChild(tekstvak);
 
     document.body.appendChild(kaart);
-
     kaart.style.left = `${e.pageX}px`;
     kaart.style.top = `${e.pageY}px`;
 });
 
-document.addEventListener('dragover', e => {
-    e.preventDefault();
-});
+document.addEventListener('dragover', e => e.preventDefault());
 
 document.addEventListener('mousedown', function (e) {
     if (!e.target.classList.contains('kaart-instance')) return;
@@ -229,16 +246,13 @@ document.addEventListener('mousedown', function (e) {
 
         const kaartRect = kaart.getBoundingClientRect();
         const trashRect = trash.getBoundingClientRect();
-
         const overlap =
             kaartRect.right > trashRect.left &&
             kaartRect.left < trashRect.right &&
             kaartRect.bottom > trashRect.top &&
             kaartRect.top < trashRect.bottom;
 
-        if (overlap) {
-            kaart.remove();
-        }
+        if (overlap) kaart.remove();
     };
 });
 
@@ -251,7 +265,6 @@ document.addEventListener('wheel', function (e) {
     const currentScale = parseFloat(obstacle.dataset.scale) || 1;
     const baseSize = 120;
     const delta = -e.deltaY;
-
     let newScale = currentScale + (delta > 0 ? 0.1 : -0.1);
     newScale = Math.max(0.5, Math.min(newScale, 3));
 
@@ -260,12 +273,8 @@ document.addEventListener('wheel', function (e) {
     obstacle.style.height = `${baseSize * newScale}px`;
 }, { passive: false });
 
-// === EXPORT FUNCTIE ===
 document.getElementById('exportBtn').addEventListener('click', () => {
-    const data = {
-        obstakels: [],
-        kaarten: []
-    };
+    const data = { obstakels: [], kaarten: [] };
 
     document.querySelectorAll('.obstacle').forEach(el => {
         data.obstakels.push({
@@ -296,7 +305,6 @@ document.getElementById('exportBtn').addEventListener('click', () => {
     URL.revokeObjectURL(url);
 });
 
-// === IMPORT FUNCTIE ===
 document.getElementById('importBtn').addEventListener('click', () => {
     document.getElementById('importInput').click();
 });
@@ -308,27 +316,22 @@ document.getElementById('importInput').addEventListener('change', (e) => {
     const reader = new FileReader();
     reader.onload = function (event) {
         const data = JSON.parse(event.target.result);
-
-        // Verwijder huidige items
         document.querySelectorAll('.obstacle, .kaart-instance').forEach(el => el.remove());
 
-        // Obstakels terugplaatsen
         data.obstakels.forEach(obj => {
             plaatsObstakel(null, obj.type);
             const el = grid.lastChild;
             el.style.left = obj.left;
             el.style.top = obj.top;
             el.dataset.scale = obj.scale;
-            el.style.width = `${80 * obj.scale}px`;
-            el.style.height = `${80 * obj.scale}px`;
+            el.style.width = `${120 * obj.scale}px`;
+            el.style.height = `${120 * obj.scale}px`;
             el.querySelector('.obstacle-tekst').textContent = obj.tekst;
         });
 
-        // Kaarten terugplaatsen
         data.kaarten.forEach(kaart => {
             const el = document.createElement('div');
             el.className = `kaart-instance ${kaart.kleur}`;
-            el.setAttribute('contenteditable', 'false');
             el.style.left = kaart.left;
             el.style.top = kaart.top;
 
@@ -353,7 +356,6 @@ document.getElementById('addRowBtn').addEventListener('click', voegRijToe);
 document.getElementById('removeRowBtn').addEventListener('click', verwijderBovensteRij);
 
 function voegRijToe() {
-    const grid = document.getElementById('grid');
     const cellen = Array.from(grid.children).filter(c => c.classList.contains('cell'));
     const kolommen = 10;
     const rijen = cellen.length / kolommen;
@@ -366,50 +368,21 @@ function voegRijToe() {
     for (let i = 0; i < kolommen; i++) {
         const nieuweCel = document.createElement('div');
         nieuweCel.className = 'cell';
-        nieuweCel.addEventListener('dragover', (e) => e.preventDefault());
-        nieuweCel.addEventListener('drop', (e) => {
-            e.preventDefault();
-            const id = e.dataTransfer.getData('text/plain');
-            const draggedElement = document.getElementById(id);
-
-            if (draggedElement && draggedElement.classList.contains('obstacle')) {
-                const mouseX = e.pageX - grid.offsetLeft;
-                const mouseY = e.pageY - grid.offsetTop;
-                draggedElement.style.top = `${mouseY - 40}px`;
-                draggedElement.style.left = `${mouseX - 40}px`;
-                return;
-            }
-
-            if (id === 'kaart') return;
-
-            const type = id;
-            plaatsObstakel(nieuweCel, type);
-        });
-
+        voegDropHandlersToe(nieuweCel);
         grid.insertBefore(nieuweCel, grid.firstChild);
     }
 
-    // Obstakels visueel naar beneden verschuiven
     document.querySelectorAll('.obstacle').forEach(ob => {
         const top = parseInt(ob.style.top || '0');
         ob.style.top = (top + 80) + 'px';
     });
 
-    // CSS aanpassen
     const nieuweRijen = rijen + 1;
     grid.style.gridTemplateRows = `repeat(${nieuweRijen}, 80px)`;
-    grid.style.height = `${nieuweRijen * 80}px`;
-
-    // Achtergrondpositie bijwerken
-    const nieuweY = 800 - (nieuweRijen * 80);
-    const offset = (aantalRijen * 80) - 800;
-    grid.style.backgroundPositionY = `-${offset}px`;
     updateRijLabels();
 }
 
-
 function verwijderBovensteRij() {
-    const grid = document.getElementById('grid');
     const cellen = Array.from(grid.children).filter(c => c.classList.contains('cell'));
     const kolommen = 10;
     const rijen = cellen.length / kolommen;
@@ -419,12 +392,10 @@ function verwijderBovensteRij() {
         return;
     }
 
-    // Verwijder de bovenste rij (eerste 10 cellen)
     for (let i = 0; i < kolommen; i++) {
         grid.removeChild(cellen[i]);
     }
 
-    // Obstakels visueel naar boven verschuiven
     document.querySelectorAll('.obstacle').forEach(ob => {
         const top = parseInt(ob.style.top || '0');
         ob.style.top = (top - 80) + 'px';
@@ -432,26 +403,12 @@ function verwijderBovensteRij() {
 
     const nieuweRijen = rijen - 1;
     grid.style.gridTemplateRows = `repeat(${nieuweRijen}, 80px)`;
-    grid.style.height = `${nieuweRijen * 80}px`;
-
-    // Achtergrondpositie bijwerken
-    const nieuweY = 800 - (nieuweRijen * 80);
-    grid.style.backgroundPositionY = `${nieuweY}px`;
-
     updateRijLabels();
 }
 
-
-document.getElementById('removeRowBtn').addEventListener('click', verwijderBovensteRij);
-
-
-
-
 function updateRijLabels() {
-    // Verwijder bestaande labels
     document.querySelectorAll('.row-label').forEach(label => label.remove());
 
-    const grid = document.getElementById('grid');
     const cellen = Array.from(grid.children).filter(c => c.classList.contains('cell'));
     const kolommen = 10;
     const rijen = cellen.length / kolommen;
@@ -460,7 +417,7 @@ function updateRijLabels() {
         const label = document.createElement('div');
         label.className = 'row-label';
         label.textContent = i + 1;
-        label.style.top = `${i * 80 + 30}px`; // iets naar beneden in de cel
+        label.style.top = `${i * 80 + 30}px`;
         grid.appendChild(label);
     }
 }
