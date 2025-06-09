@@ -15,20 +15,86 @@ const obstacleImages = {
 const geschiedenis = [];
 
 // 📦 Grid bouwen
-function bouwGrid() {
-    grid.innerHTML = '';
+function bouwGrid(obstakels = [], kaarten = []) {
+    // Verwijder bestaande cellen (obstakels en kaarten staan los in de DOM)
+    Array.from(grid.children).forEach(child => {
+        if (child.classList.contains('cell')) grid.removeChild(child);
+    });
+
+    // Nieuwe cellen maken
     for (let i = 0; i < gridSize * aantalRijen; i++) {
         const cell = document.createElement('div');
         cell.className = 'cell';
         voegDropHandlersToe(cell);
         grid.appendChild(cell);
     }
+
     updateGridRijen();
+
+    // Obstakels opnieuw plaatsen
+    obstakels.forEach(obj => {
+        const cel = null;
+        const type = obj.type;
+        const vergrendeld = false;
+        const newEl = document.createElement('div');
+        newEl.className = 'obstacle';
+        newEl.id = 'obstacle-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+        newEl.dataset.scale = obj.scale || 1;
+        newEl.style.position = 'absolute';
+        newEl.style.width = `${120 * obj.scale}px`;
+        newEl.style.height = `${120 * obj.scale}px`;
+        newEl.style.left = obj.left;
+        newEl.style.top = obj.top;
+        newEl.setAttribute('draggable', true);
+
+        const img = document.createElement('img');
+        img.src = obstacleImages[type];
+        img.alt = type;
+        img.draggable = false;
+        newEl.appendChild(img);
+
+        const tekst = document.createElement('div');
+        tekst.className = 'obstacle-tekst';
+        tekst.textContent = obj.tekst || type;
+        tekst.contentEditable = true;
+        newEl.appendChild(tekst);
+
+        newEl.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', newEl.id);
+        });
+
+        grid.appendChild(newEl);
+    });
+
+    // Kaarten opnieuw plaatsen
+    kaarten.forEach(k => {
+        const el = document.createElement('div');
+        const kleurClass = k.kleur && k.kleur.startsWith('kaart-') ? k.kleur : 'kaart-geel';
+        el.className = `kaart-instance ${kleurClass}`;
+        el.id = `kaart-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+        el.style.position = 'absolute';
+        el.style.left = k.left;
+        el.style.top = k.top;
+
+        const icoon = document.createElement('div');
+        icoon.className = 'kaart-icoon';
+        icoon.textContent = k.icoon || '❓';
+
+        const tekst = document.createElement('div');
+        tekst.className = 'kaart-tekst';
+        tekst.contentEditable = true;
+        tekst.textContent = k.tekst || '';
+
+        el.appendChild(icoon);
+        el.appendChild(tekst);
+        document.body.appendChild(el);
+    });
+
+    console.log(`✅ Grid opnieuw opgebouwd met ${obstakels.length} obstakels en ${kaarten.length} kaarten.`);
 }
 
-function updateGridRijen() {
-    grid.style.gridTemplateRows = `repeat(${aantalRijen}, 80px)`;
-}
+
+
 
 // 🧱 Obstakel plaatsen
 function plaatsObstakel(cel, type, vergrendeld = false, col = null, row = null) {
@@ -295,49 +361,52 @@ document.getElementById('importBtn').addEventListener('click', () => {
     document.getElementById('importInput').click();
 });
 
-document.getElementById('importInput').addEventListener('change', e => {
+document.getElementById('importInput').addEventListener('change', (e) => {
     const file = e.target.files[0];
-    if (!file) return;
+    if (!file) {
+        alert("Geen bestand geselecteerd");
+        return;
+    }
 
     const reader = new FileReader();
     reader.onload = evt => {
-        const data = JSON.parse(evt.target.result);
-        document.querySelectorAll('.obstacle, .kaart-instance').forEach(el => el.remove());
+        try {
+            const result = evt.target.result;
+            console.log("📥 Bestand inhoud:", result);
 
-        data.obstakels.forEach(o => {
-            plaatsObstakel(null, o.type);
-            const el = grid.lastChild;
-            el.style.left = o.left;
-            el.style.top = o.top;
-            el.dataset.scale = o.scale;
-            el.style.width = `${120 * o.scale}px`;
-            el.style.height = `${120 * o.scale}px`;
-            el.querySelector('.obstacle-tekst').textContent = o.tekst;
-        });
+            const data = JSON.parse(result);
+            console.log("✅ JSON parsed:", data);
 
-        data.kaarten.forEach(k => {
-            const el = document.createElement('div');
-            el.className = `kaart-instance ${k.kleur}`;
-            el.style.left = k.left;
-            el.style.top = k.top;
+            if (!Array.isArray(data.obstakels)) {
+                console.error("❌ obstakels ontbreekt of is geen array");
+            }
+            if (!Array.isArray(data.kaarten)) {
+                console.error("❌ kaarten ontbreekt of is geen array");
+            }
 
-            const icoon = document.createElement('div');
-            icoon.className = 'kaart-icoon';
-            icoon.textContent = k.icoon;
+            console.log("📊 Obstakels:", data.obstakels.length);
+            console.log("📊 Kaarten:", data.kaarten.length);
 
-            const tekst = document.createElement('div');
-            tekst.className = 'kaart-tekst';
-            tekst.textContent = k.tekst;
-            tekst.contentEditable = true;
+            const topWaarden = [
+                ...data.obstakels.map(o => parseInt(o.top)),
+                ...data.kaarten.map(k => parseInt(k.top))
+            ];
+            const hoogsteTop = Math.max(...topWaarden, 0);
+            aantalRijen = Math.ceil((hoogsteTop + 120) / 80);
 
-            el.appendChild(icoon);
-            el.appendChild(tekst);
-            document.body.appendChild(el);
-        });
+            bouwGrid(data.obstakels, data.kaarten);
+
+        } catch (error) {
+            console.error("🚨 Fout tijdens import:", error);
+            alert("Kon het bordspelbestand niet lezen. Is het wel een geldig JSON-bestand?");
+        }
     };
 
     reader.readAsText(file);
 });
+
+
+
 
 // ➕➖ Rijenbeheer
 document.getElementById('addRowBtn').addEventListener('click', () => {
@@ -351,6 +420,10 @@ document.getElementById('removeRowBtn').addEventListener('click', () => {
     aantalRijen--;
     bouwGrid();
 });
+
+function updateGridRijen() {
+    grid.style.gridTemplateRows = `repeat(${aantalRijen}, 80px)`;
+}
 
 // 🛠️ Init
 bouwGrid();
