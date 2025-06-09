@@ -1,32 +1,45 @@
 const grid = document.getElementById('grid');
 const gridSize = 10;
 let aantalRijen = 10;
-const geschiedenis = [];
 
 const obstacleImages = {
-    "berg": "img/berg.png",
-    "bos": "img/bos.png",
-    "moeras": "img/moeras.png",
-    "woestijn": "img/woestijn.png",
-    "brug": "img/brug.png",
-    "muur": "img/muur.png",
-    "orc": "img/orc.png"
+    berg: "img/berg.png",
+    bos: "img/bos.png",
+    moeras: "img/moeras.png",
+    woestijn: "img/woestijn.png",
+    brug: "img/brug.png",
+    muur: "img/muur.png",
+    orc: "img/orc.png"
 };
 
-function plaatsObstakel(cel, type, vergrendeld = false, col = null, row = null) {
-    console.log('plaatsObstakel:', type);
+const geschiedenis = [];
 
+// 📦 Grid bouwen
+function bouwGrid() {
+    grid.innerHTML = '';
+    for (let i = 0; i < gridSize * aantalRijen; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        voegDropHandlersToe(cell);
+        grid.appendChild(cell);
+    }
+    updateGridRijen();
+}
+
+function updateGridRijen() {
+    grid.style.gridTemplateRows = `repeat(${aantalRijen}, 80px)`;
+}
+
+// 🧱 Obstakel plaatsen
+function plaatsObstakel(cel, type, vergrendeld = false, col = null, row = null) {
+    const id = `obstacle-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     const item = document.createElement('div');
     item.className = 'obstacle';
-
-    const id = 'obstacle-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
-    item.setAttribute('id', id);
+    item.id = id;
     item.dataset.scale = '1';
     item.style.position = 'absolute';
-
-    const baseSize = 120;
-    item.style.width = `${baseSize}px`;
-    item.style.height = `${baseSize}px`;
+    item.style.width = '120px';
+    item.style.height = '120px';
 
     if (vergrendeld) {
         item.classList.add('locked');
@@ -48,58 +61,66 @@ function plaatsObstakel(cel, type, vergrendeld = false, col = null, row = null) 
     tekst.className = 'obstacle-tekst';
     tekst.textContent = type;
     if (!vergrendeld) tekst.contentEditable = true;
-    tekst.setAttribute('draggable', false);
     item.appendChild(tekst);
 
-    let targetRow = row;
-    let targetCol = col;
-
-    if (cel && col === null && row === null) {
-        const cellIndex = Array.from(grid.children).indexOf(cel);
-        targetRow = Math.floor(cellIndex / gridSize);
-        targetCol = cellIndex % gridSize;
-    } else if (col === null && row === null) {
+    if (!col || !row) {
         const rect = grid.getBoundingClientRect();
         const mouseX = window.lastDropX - rect.left;
         const mouseY = window.lastDropY - rect.top;
-        targetCol = Math.floor(mouseX / 80);
-        targetRow = Math.floor(mouseY / 80);
+        col = Math.floor(mouseX / 80);
+        row = Math.floor(mouseY / 80);
     }
 
-    item.style.left = `${targetCol * 80}px`;
-    item.style.top = `${targetRow * 80}px`;
+    item.style.left = `${col * 80}px`;
+    item.style.top = `${row * 80}px`;
     grid.appendChild(item);
 
-    if (!vergrendeld && !item.hasAttribute('data-init')) {
-        item.setAttribute('data-init', 'true');
+    if (!vergrendeld) {
         item.addEventListener('dragstart', (e) => {
-            if (!e.target.classList.contains('obstacle')) {
-                e.preventDefault();
-                return;
-            }
             e.dataTransfer.setData('text/plain', item.id);
         });
     }
 }
 
-for (let i = 0; i < gridSize * gridSize; i++) {
-    const cell = document.createElement('div');
-    cell.className = 'cell';
-    grid.appendChild(cell);
+// 🗑️ Prullenbak functionaliteit
+function setupTrash() {
+    const trash = document.getElementById("trash");
+
+    trash.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        trash.style.backgroundColor = "#faa";
+    });
+
+    trash.addEventListener("dragleave", () => {
+        trash.style.backgroundColor = "#fee";
+    });
+
+    trash.addEventListener("drop", (e) => {
+        e.preventDefault();
+        trash.style.backgroundColor = "#fee";
+        const id = e.dataTransfer.getData("text/plain");
+        const el = document.getElementById(id);
+        if (el?.classList.contains("obstacle") || el?.classList.contains("kaart-instance")) {
+            el.remove();
+        }
+    });
 }
 
+// 🔀 Drag & drop handlers voor grid cellen
 function voegDropHandlersToe(cell) {
     cell.addEventListener('dragover', (e) => e.preventDefault());
+
     cell.addEventListener('drop', (e) => {
-        e.stopPropagation();
         e.preventDefault();
-        const id = e.dataTransfer.getData('text/plain');
-        const draggedElement = document.getElementById(id);
+        e.stopPropagation();
 
         window.lastDropX = e.clientX;
         window.lastDropY = e.clientY;
 
-        if (draggedElement && draggedElement.classList.contains('obstacle')) {
+        const id = e.dataTransfer.getData("text/plain");
+        const draggedElement = document.getElementById(id);
+
+        if (draggedElement?.classList.contains('obstacle')) {
             const rect = grid.getBoundingClientRect();
             const mouseX = e.clientX - rect.left;
             const mouseY = e.clientY - rect.top;
@@ -110,28 +131,31 @@ function voegDropHandlersToe(cell) {
             return;
         }
 
-        if (id === 'kaart') return;
-        plaatsObstakel(cell, id);
+        if (id === 'kaart') {
+            plaatsKaart(e);
+        } else {
+            plaatsObstakel(cell, id);
+        }
     });
 }
 
-grid.querySelectorAll('.cell').forEach(voegDropHandlersToe);
-
+// 🧰 Toolbox drag
 document.querySelectorAll('.tool').forEach(tool => {
     tool.addEventListener('dragstart', e => {
         e.dataTransfer.setData('text/plain', tool.dataset.type);
     });
 });
 
+// 📥 Drop op grid zonder cel
 grid.addEventListener('drop', (e) => {
     e.preventDefault();
-    const id = e.dataTransfer.getData('text/plain');
-    const draggedElement = document.getElementById(id);
-
     window.lastDropX = e.clientX;
     window.lastDropY = e.clientY;
 
-    if (draggedElement && draggedElement.classList.contains('obstacle')) {
+    const id = e.dataTransfer.getData("text/plain");
+    const draggedElement = document.getElementById(id);
+
+    if (draggedElement?.classList.contains('obstacle')) {
         const rect = grid.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
@@ -142,95 +166,55 @@ grid.addEventListener('drop', (e) => {
         return;
     }
 
-    if (id === 'kaart') return;
-    plaatsObstakel(null, id);
-});
-
-const trash = document.getElementById("trash");
-trash.addEventListener("dragover", (e) => {
-    e.preventDefault();
-    trash.style.backgroundColor = "#faa";
-});
-trash.addEventListener("dragleave", () => {
-    trash.style.backgroundColor = "#fee";
-});
-trash.addEventListener("drop", (e) => {
-    e.preventDefault();
-    trash.style.backgroundColor = "#fee";
-    const id = e.dataTransfer.getData("text/plain");
-    const draggedElement = document.getElementById(id);
-    if (draggedElement && draggedElement.classList.contains("obstacle")) {
-        draggedElement.remove();
-    }
-    if (id === 'kaart' && !draggedElement) {
-        document.querySelectorAll('.kaart-instance').forEach(kaart => {
-            const kaartRect = kaart.getBoundingClientRect();
-            const trashRect = trash.getBoundingClientRect();
-            if (
-                kaartRect.right > trashRect.left &&
-                kaartRect.left < trashRect.right &&
-                kaartRect.bottom > trashRect.top &&
-                kaartRect.top < trashRect.bottom
-            ) {
-                kaart.remove();
-            }
-        });
+    if (id === 'kaart') {
+        plaatsKaart(e);
+    } else {
+        plaatsObstakel(null, id);
     }
 });
 
-document.querySelectorAll('.kaart-template').forEach(template => {
-    template.addEventListener('dragstart', e => {
-        e.dataTransfer.setData('text/plain', 'kaart');
-        e.dataTransfer.setData('kleur', template.dataset.kleur);
-        e.dataTransfer.setData('icoon', template.dataset.icoon);
-    });
-});
-
-document.addEventListener('drop', e => {
-    const type = e.dataTransfer.getData('text/plain');
-    if (type !== 'kaart') return;
-
-    const kleurClass = e.dataTransfer.getData('kleur') || 'kaart-geel';
-    const icoonType = e.dataTransfer.getData('icoon') || 'vraag';
+// 🃏 Kaartfunctie
+function plaatsKaart(e) {
+    const kleur = e.dataTransfer.getData("kleur") || 'kaart-geel';
+    const icoonType = e.dataTransfer.getData("icoon") || 'vraag';
 
     const kaart = document.createElement('div');
-    kaart.className = `kaart-instance ${kleurClass}`;
-    kaart.setAttribute('id', 'kaart-' + Date.now());
+    kaart.className = `kaart-instance ${kleur}`;
+    kaart.id = `kaart-${Date.now()}`;
+    kaart.style.position = 'absolute';
+    kaart.style.left = `${e.pageX}px`;
+    kaart.style.top = `${e.pageY}px`;
 
     const icoon = document.createElement('div');
     icoon.className = 'kaart-icoon';
-    icoon.textContent = icoonType === 'vraag' ? '❓'
-        : icoonType === 'idee' ? '💡'
-            : icoonType === 'hulp' ? '🫴'
-                : icoonType === 'letop' ? '⚠️'
-                    : '🔍';
+    icoon.textContent = {
+        vraag: '❓',
+        idee: '💡',
+        hulp: '🫴',
+        letop: '⚠️'
+    }[icoonType] || '🔍';
+
+    const tekst = document.createElement('div');
+    tekst.className = 'kaart-tekst';
+    tekst.contentEditable = true;
+    tekst.textContent = 'Dubbelklik om te bewerken';
+
     kaart.appendChild(icoon);
-
-    const tekstvak = document.createElement('div');
-    tekstvak.className = 'kaart-tekst';
-    tekstvak.setAttribute('contenteditable', 'true');
-    tekstvak.textContent = 'Dubbelklik om te bewerken';
-    kaart.appendChild(tekstvak);
-
+    kaart.appendChild(tekst);
     document.body.appendChild(kaart);
-    kaart.style.left = `${e.pageX}px`;
-    kaart.style.top = `${e.pageY}px`;
-});
+}
 
-document.addEventListener('dragover', e => e.preventDefault());
-
-document.addEventListener('mousedown', function (e) {
+// 🎯 Kaarten verslepen
+document.addEventListener('mousedown', (e) => {
     if (!e.target.classList.contains('kaart-instance')) return;
 
     const kaart = e.target;
-    let shiftX = e.clientX - kaart.getBoundingClientRect().left;
-    let shiftY = e.clientY - kaart.getBoundingClientRect().top;
+    let offsetX = e.clientX - kaart.getBoundingClientRect().left;
+    let offsetY = e.clientY - kaart.getBoundingClientRect().top;
 
-    kaart.style.userSelect = 'none';
-
-    function moveAt(pageX, pageY) {
-        kaart.style.left = pageX - shiftX + 'px';
-        kaart.style.top = pageY - shiftY + 'px';
+    function moveAt(x, y) {
+        kaart.style.left = x - offsetX + 'px';
+        kaart.style.top = y - offsetY + 'px';
     }
 
     function onMouseMove(e) {
@@ -239,58 +223,59 @@ document.addEventListener('mousedown', function (e) {
 
     document.addEventListener('mousemove', onMouseMove);
 
-    kaart.onmouseup = function () {
+    kaart.onmouseup = () => {
         document.removeEventListener('mousemove', onMouseMove);
         kaart.onmouseup = null;
-        kaart.style.userSelect = 'auto';
-
-        const kaartRect = kaart.getBoundingClientRect();
-        const trashRect = trash.getBoundingClientRect();
-        const overlap =
-            kaartRect.right > trashRect.left &&
-            kaartRect.left < trashRect.right &&
-            kaartRect.bottom > trashRect.top &&
-            kaartRect.top < trashRect.bottom;
-
-        if (overlap) kaart.remove();
     };
 });
 
-document.addEventListener('wheel', function (e) {
+// 🔍 Kaarten slepen vanuit template
+document.querySelectorAll('.kaart-template').forEach(template => {
+    template.addEventListener('dragstart', e => {
+        e.dataTransfer.setData("text/plain", 'kaart');
+        e.dataTransfer.setData("kleur", template.dataset.kleur);
+        e.dataTransfer.setData("icoon", template.dataset.icoon);
+    });
+});
+
+// 🔄 Scroll = schaal
+document.addEventListener('wheel', (e) => {
     const obstacle = e.target.closest('.obstacle');
     if (!obstacle || !grid.contains(obstacle)) return;
 
     e.preventDefault();
-
-    const currentScale = parseFloat(obstacle.dataset.scale) || 1;
-    const baseSize = 120;
+    const base = 120;
     const delta = -e.deltaY;
-    let newScale = currentScale + (delta > 0 ? 0.1 : -0.1);
-    newScale = Math.max(0.5, Math.min(newScale, 3));
-
-    obstacle.dataset.scale = newScale.toFixed(2);
-    obstacle.style.width = `${baseSize * newScale}px`;
-    obstacle.style.height = `${baseSize * newScale}px`;
+    let scale = parseFloat(obstacle.dataset.scale) || 1;
+    scale += delta > 0 ? 0.1 : -0.1;
+    scale = Math.max(0.5, Math.min(scale, 3));
+    obstacle.dataset.scale = scale.toFixed(2);
+    obstacle.style.width = `${base * scale}px`;
+    obstacle.style.height = `${base * scale}px`;
 }, { passive: false });
 
+// 💾 Export
 document.getElementById('exportBtn').addEventListener('click', () => {
-    const data = { obstakels: [], kaarten: [] };
+    const data = {
+        obstakels: [],
+        kaarten: []
+    };
 
     document.querySelectorAll('.obstacle').forEach(el => {
         data.obstakels.push({
             type: el.querySelector('img')?.alt || '',
             left: el.style.left,
             top: el.style.top,
-            scale: el.dataset.scale || 1,
-            tekst: el.querySelector('.obstacle-tekst')?.textContent || ''
+            scale: el.dataset.scale,
+            tekst: el.querySelector('.obstacle-tekst')?.textContent
         });
     });
 
     document.querySelectorAll('.kaart-instance').forEach(el => {
         data.kaarten.push({
             kleur: [...el.classList].find(c => c.startsWith('kaart-')),
-            icoon: el.querySelector('.kaart-icoon')?.textContent || '',
-            tekst: el.querySelector('.kaart-tekst')?.textContent || '',
+            icoon: el.querySelector('.kaart-icoon')?.textContent,
+            tekst: el.querySelector('.kaart-tekst')?.textContent,
             left: el.style.left,
             top: el.style.top
         });
@@ -305,43 +290,45 @@ document.getElementById('exportBtn').addEventListener('click', () => {
     URL.revokeObjectURL(url);
 });
 
+// 📂 Import
 document.getElementById('importBtn').addEventListener('click', () => {
     document.getElementById('importInput').click();
 });
 
-document.getElementById('importInput').addEventListener('change', (e) => {
+document.getElementById('importInput').addEventListener('change', e => {
     const file = e.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = function (event) {
-        const data = JSON.parse(event.target.result);
+    reader.onload = evt => {
+        const data = JSON.parse(evt.target.result);
         document.querySelectorAll('.obstacle, .kaart-instance').forEach(el => el.remove());
 
-        data.obstakels.forEach(obj => {
-            plaatsObstakel(null, obj.type);
+        data.obstakels.forEach(o => {
+            plaatsObstakel(null, o.type);
             const el = grid.lastChild;
-            el.style.left = obj.left;
-            el.style.top = obj.top;
-            el.dataset.scale = obj.scale;
-            el.style.width = `${120 * obj.scale}px`;
-            el.style.height = `${120 * obj.scale}px`;
-            el.querySelector('.obstacle-tekst').textContent = obj.tekst;
+            el.style.left = o.left;
+            el.style.top = o.top;
+            el.dataset.scale = o.scale;
+            el.style.width = `${120 * o.scale}px`;
+            el.style.height = `${120 * o.scale}px`;
+            el.querySelector('.obstacle-tekst').textContent = o.tekst;
         });
 
-        data.kaarten.forEach(kaart => {
+        data.kaarten.forEach(k => {
             const el = document.createElement('div');
-            el.className = `kaart-instance ${kaart.kleur}`;
-            el.style.left = kaart.left;
-            el.style.top = kaart.top;
+            el.className = `kaart-instance ${k.kleur}`;
+            el.style.left = k.left;
+            el.style.top = k.top;
 
             const icoon = document.createElement('div');
             icoon.className = 'kaart-icoon';
-            icoon.textContent = kaart.icoon;
+            icoon.textContent = k.icoon;
 
             const tekst = document.createElement('div');
             tekst.className = 'kaart-tekst';
-            tekst.textContent = kaart.tekst;
+            tekst.textContent = k.tekst;
+            tekst.contentEditable = true;
 
             el.appendChild(icoon);
             el.appendChild(tekst);
@@ -352,72 +339,19 @@ document.getElementById('importInput').addEventListener('change', (e) => {
     reader.readAsText(file);
 });
 
-document.getElementById('addRowBtn').addEventListener('click', voegRijToe);
-document.getElementById('removeRowBtn').addEventListener('click', verwijderBovensteRij);
+// ➕➖ Rijenbeheer
+document.getElementById('addRowBtn').addEventListener('click', () => {
+    if (aantalRijen >= 20) return;
+    aantalRijen++;
+    bouwGrid();
+});
 
-function voegRijToe() {
-    const cellen = Array.from(grid.children).filter(c => c.classList.contains('cell'));
-    const kolommen = 10;
-    const rijen = cellen.length / kolommen;
+document.getElementById('removeRowBtn').addEventListener('click', () => {
+    if (aantalRijen <= 10) return;
+    aantalRijen--;
+    bouwGrid();
+});
 
-    if (rijen >= 20) {
-        alert('Je kunt maximaal 20 rijen toevoegen.');
-        return;
-    }
-
-    for (let i = 0; i < kolommen; i++) {
-        const nieuweCel = document.createElement('div');
-        nieuweCel.className = 'cell';
-        voegDropHandlersToe(nieuweCel);
-        grid.insertBefore(nieuweCel, grid.firstChild);
-    }
-
-    document.querySelectorAll('.obstacle').forEach(ob => {
-        const top = parseInt(ob.style.top || '0');
-        ob.style.top = (top + 80) + 'px';
-    });
-
-    const nieuweRijen = rijen + 1;
-    grid.style.gridTemplateRows = `repeat(${nieuweRijen}, 80px)`;
-    updateRijLabels();
-}
-
-function verwijderBovensteRij() {
-    const cellen = Array.from(grid.children).filter(c => c.classList.contains('cell'));
-    const kolommen = 10;
-    const rijen = cellen.length / kolommen;
-
-    if (rijen <= 10) {
-        alert('Je moet minimaal 10 rijen behouden.');
-        return;
-    }
-
-    for (let i = 0; i < kolommen; i++) {
-        grid.removeChild(cellen[i]);
-    }
-
-    document.querySelectorAll('.obstacle').forEach(ob => {
-        const top = parseInt(ob.style.top || '0');
-        ob.style.top = (top - 80) + 'px';
-    });
-
-    const nieuweRijen = rijen - 1;
-    grid.style.gridTemplateRows = `repeat(${nieuweRijen}, 80px)`;
-    updateRijLabels();
-}
-
-function updateRijLabels() {
-    document.querySelectorAll('.row-label').forEach(label => label.remove());
-
-    const cellen = Array.from(grid.children).filter(c => c.classList.contains('cell'));
-    const kolommen = 10;
-    const rijen = cellen.length / kolommen;
-
-    for (let i = 0; i < rijen; i++) {
-        const label = document.createElement('div');
-        label.className = 'row-label';
-        label.textContent = i + 1;
-        label.style.top = `${i * 80 + 30}px`;
-        grid.appendChild(label);
-    }
-}
+// 🛠️ Init
+bouwGrid();
+setupTrash();
