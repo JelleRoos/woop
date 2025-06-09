@@ -327,26 +327,31 @@ document.getElementById('exportBtn').addEventListener('click', () => {
         kaarten: []
     };
 
+    // 🔁 Verzamel obstakels
     document.querySelectorAll('.obstacle').forEach(el => {
         data.obstakels.push({
             type: el.querySelector('img')?.alt || '',
             left: el.style.left,
             top: el.style.top,
-            scale: el.dataset.scale,
-            tekst: el.querySelector('.obstacle-tekst')?.textContent
+            scale: el.dataset.scale || '1',
+            tekst: el.querySelector('.obstacle-tekst')?.textContent || ''
         });
     });
 
+    // 🔁 Verzamel kaarten met juiste kleur
     document.querySelectorAll('.kaart-instance').forEach(el => {
+        const kleurClass = [...el.classList].find(c => c.startsWith('kaart-') && c !== 'kaart-instance') || 'kaart-geel';
+
         data.kaarten.push({
-            kleur: [...el.classList].find(c => c.startsWith('kaart-')),
-            icoon: el.querySelector('.kaart-icoon')?.textContent,
-            tekst: el.querySelector('.kaart-tekst')?.textContent,
+            kleur: kleurClass,
+            icoon: el.querySelector('.kaart-icoon')?.textContent || '❓',
+            tekst: el.querySelector('.kaart-tekst')?.textContent || '',
             left: el.style.left,
             top: el.style.top
         });
     });
 
+    // 💾 Maak en download bestand
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
