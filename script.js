@@ -33,13 +33,11 @@ function bouwGrid(obstakels = [], kaarten = []) {
 
     // Obstakels opnieuw plaatsen
     obstakels.forEach(obj => {
-        const cel = null;
         const type = obj.type;
-        const vergrendeld = false;
         const newEl = document.createElement('div');
         newEl.className = 'obstacle';
-        newEl.id = 'obstacle-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
-        newEl.dataset.scale = obj.scale || 1;
+        newEl.id = `obstacle-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+        newEl.dataset.scale = obj.scale || '1';
         newEl.style.position = 'absolute';
         newEl.style.width = `${120 * obj.scale}px`;
         newEl.style.height = `${120 * obj.scale}px`;
@@ -59,7 +57,8 @@ function bouwGrid(obstakels = [], kaarten = []) {
         tekst.contentEditable = true;
         newEl.appendChild(tekst);
 
-        newEl.addEventListener('dragstart', (e) => {
+        // obstakel versleepbaar maken
+        newEl.addEventListener('dragstart', e => {
             e.dataTransfer.setData('text/plain', newEl.id);
         });
 
@@ -68,8 +67,8 @@ function bouwGrid(obstakels = [], kaarten = []) {
 
     // Kaarten opnieuw plaatsen
     kaarten.forEach(k => {
-        const el = document.createElement('div');
         const kleurClass = k.kleur && k.kleur.startsWith('kaart-') ? k.kleur : 'kaart-geel';
+        const el = document.createElement('div');
         el.className = `kaart-instance ${kleurClass}`;
         el.id = `kaart-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
         el.style.position = 'absolute';
@@ -79,19 +78,22 @@ function bouwGrid(obstakels = [], kaarten = []) {
         const icoon = document.createElement('div');
         icoon.className = 'kaart-icoon';
         icoon.textContent = k.icoon || '❓';
+        el.appendChild(icoon);
 
         const tekst = document.createElement('div');
         tekst.className = 'kaart-tekst';
         tekst.contentEditable = true;
         tekst.textContent = k.tekst || '';
-
-        el.appendChild(icoon);
         el.appendChild(tekst);
+
         document.body.appendChild(el);
+
+
     });
 
     console.log(`✅ Grid opnieuw opgebouwd met ${obstakels.length} obstakels en ${kaarten.length} kaarten.`);
 }
+
 
 
 
@@ -286,10 +288,6 @@ function plaatsKaart(e) {
     kaart.appendChild(icoon);
     kaart.appendChild(tekst);
     document.body.appendChild(kaart);
-    kaart.setAttribute('draggable', true);
-    kaart.addEventListener('dragstart', e => {
-        e.dataTransfer.setData("text/plain", kaart.id);
-    });
 
 }
 
@@ -326,6 +324,57 @@ document.querySelectorAll('.kaart-template').forEach(template => {
         e.dataTransfer.setData("icoon", template.dataset.icoon);
     });
 });
+
+// ——— Manual drag & drop voor KAARTEN incl. prullenbak ———
+document.addEventListener('mousedown', e => {
+    // alleen kaarten
+    if (!e.target.classList.contains('kaart-instance')) return;
+    const kaart = e.target;
+    const trash = document.getElementById('trash');
+
+    // bereken offset
+    let shiftX = e.clientX - kaart.getBoundingClientRect().left;
+    let shiftY = e.clientY - kaart.getBoundingClientRect().top;
+
+    // breng naar voor
+    kaart.style.position = 'absolute';
+    kaart.style.zIndex = 1000;
+    document.body.appendChild(kaart);
+
+    function moveAt(pageX, pageY) {
+        kaart.style.left = pageX - shiftX + 'px';
+        kaart.style.top = pageY - shiftY + 'px';
+    }
+
+    // meteen volgen
+    moveAt(e.pageX, e.pageY);
+
+    // bewegen
+    function onMouseMove(e) {
+        moveAt(e.pageX, e.pageY);
+    }
+    document.addEventListener('mousemove', onMouseMove);
+
+    // loslaten
+    document.addEventListener('mouseup', function onMouseUp(e) {
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+
+        // check overlap met prullenbak
+        const kRect = kaart.getBoundingClientRect();
+        const tRect = trash.getBoundingClientRect();
+        if (
+            kRect.right > tRect.left &&
+            kRect.left < tRect.right &&
+            kRect.bottom > tRect.top &&
+            kRect.top < tRect.bottom
+        ) {
+            kaart.remove();
+        }
+    });
+});
+// ————————————————————————————————————————————————
+
 
 // 🔄 Scroll = schaal
 document.addEventListener('wheel', (e) => {
