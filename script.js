@@ -2,6 +2,7 @@
 
 const grid = document.getElementById('grid');
 const gridSize = 10;
+let aantalRijen = 10; // begint bij 10
 const geschiedenis = [];
 
 const obstacleImages = {
@@ -87,9 +88,7 @@ for (let i = 0; i < gridSize * gridSize; i++) {
     grid.appendChild(cell);
 }
 
-// START en DOEL rechtsonder en linksonder
-plaatsObstakel(null, 'START', true, 0, gridSize - 1);
-plaatsObstakel(null, 'DOEL', true, gridSize - 1, 0);
+
 
 document.querySelectorAll('.tool').forEach(tool => {
     tool.addEventListener('dragstart', e => {
@@ -350,3 +349,118 @@ document.getElementById('importInput').addEventListener('change', (e) => {
     reader.readAsText(file);
 });
 
+document.getElementById('addRowBtn').addEventListener('click', voegRijToe);
+document.getElementById('removeRowBtn').addEventListener('click', verwijderBovensteRij);
+
+function voegRijToe() {
+    const grid = document.getElementById('grid');
+    const cellen = Array.from(grid.children).filter(c => c.classList.contains('cell'));
+    const kolommen = 10;
+    const rijen = cellen.length / kolommen;
+
+    if (rijen >= 20) {
+        alert('Je kunt maximaal 20 rijen toevoegen.');
+        return;
+    }
+
+    for (let i = 0; i < kolommen; i++) {
+        const nieuweCel = document.createElement('div');
+        nieuweCel.className = 'cell';
+        nieuweCel.addEventListener('dragover', (e) => e.preventDefault());
+        nieuweCel.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const id = e.dataTransfer.getData('text/plain');
+            const draggedElement = document.getElementById(id);
+
+            if (draggedElement && draggedElement.classList.contains('obstacle')) {
+                const mouseX = e.pageX - grid.offsetLeft;
+                const mouseY = e.pageY - grid.offsetTop;
+                draggedElement.style.top = `${mouseY - 40}px`;
+                draggedElement.style.left = `${mouseX - 40}px`;
+                return;
+            }
+
+            if (id === 'kaart') return;
+
+            const type = id;
+            plaatsObstakel(nieuweCel, type);
+        });
+
+        grid.insertBefore(nieuweCel, grid.firstChild);
+    }
+
+    // Obstakels visueel naar beneden verschuiven
+    document.querySelectorAll('.obstacle').forEach(ob => {
+        const top = parseInt(ob.style.top || '0');
+        ob.style.top = (top + 80) + 'px';
+    });
+
+    // CSS aanpassen
+    const nieuweRijen = rijen + 1;
+    grid.style.gridTemplateRows = `repeat(${nieuweRijen}, 80px)`;
+    grid.style.height = `${nieuweRijen * 80}px`;
+
+    // Achtergrondpositie bijwerken
+    const nieuweY = 800 - (nieuweRijen * 80);
+    const offset = (aantalRijen * 80) - 800;
+    grid.style.backgroundPositionY = `-${offset}px`;
+    updateRijLabels();
+}
+
+
+function verwijderBovensteRij() {
+    const grid = document.getElementById('grid');
+    const cellen = Array.from(grid.children).filter(c => c.classList.contains('cell'));
+    const kolommen = 10;
+    const rijen = cellen.length / kolommen;
+
+    if (rijen <= 10) {
+        alert('Je moet minimaal 10 rijen behouden.');
+        return;
+    }
+
+    // Verwijder de bovenste rij (eerste 10 cellen)
+    for (let i = 0; i < kolommen; i++) {
+        grid.removeChild(cellen[i]);
+    }
+
+    // Obstakels visueel naar boven verschuiven
+    document.querySelectorAll('.obstacle').forEach(ob => {
+        const top = parseInt(ob.style.top || '0');
+        ob.style.top = (top - 80) + 'px';
+    });
+
+    const nieuweRijen = rijen - 1;
+    grid.style.gridTemplateRows = `repeat(${nieuweRijen}, 80px)`;
+    grid.style.height = `${nieuweRijen * 80}px`;
+
+    // Achtergrondpositie bijwerken
+    const nieuweY = 800 - (nieuweRijen * 80);
+    grid.style.backgroundPositionY = `${nieuweY}px`;
+
+    updateRijLabels();
+}
+
+
+document.getElementById('removeRowBtn').addEventListener('click', verwijderBovensteRij);
+
+
+
+
+function updateRijLabels() {
+    // Verwijder bestaande labels
+    document.querySelectorAll('.row-label').forEach(label => label.remove());
+
+    const grid = document.getElementById('grid');
+    const cellen = Array.from(grid.children).filter(c => c.classList.contains('cell'));
+    const kolommen = 10;
+    const rijen = cellen.length / kolommen;
+
+    for (let i = 0; i < rijen; i++) {
+        const label = document.createElement('div');
+        label.className = 'row-label';
+        label.textContent = i + 1;
+        label.style.top = `${i * 80 + 30}px`; // iets naar beneden in de cel
+        grid.appendChild(label);
+    }
+}
