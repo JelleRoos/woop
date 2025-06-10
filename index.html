@@ -12,8 +12,7 @@
 <body>
     <!-- HEADER -->
     <header id="editor-header">
-        <h1 class="titel">Visuele WOOP</h1>
-        <h2 class="subtitel">Tool om je woop te visualiseren</h2>
+
     </header>
 
     <!-- EDITOR LAYOUT: 3 KOLOMMEN -->
@@ -55,6 +54,7 @@
         </aside>
 
         <!-- MIDDEKOLOM: GRID + KNOPPEN -->
+
         <section id="grid-wrapper">
             <div id="grid-container">
                 <div id="grid"></div>
@@ -100,8 +100,10 @@
     <!-- UITLEG EN FAQ ONDERAAN -->
     <section id="uitleg-en-faq">
         <div id="extraGridControls">
+            <h1 class="titel">Visuele WOOP</h1>
+            <h2 class="subtitel">Tool om je woop te visualiseren</h2>
             <button id="addRowBtn" class="toolbox-btn">➕ Voeg rij toe</button>
-            <button id="removeRowBtn" class="toolbox-btn">🗑️ Verwijder bovenste rij</button>
+            <button id="removeRowBtn" class="toolbox-btn">🗑️ Verwijder onderste rij</button>
         </div>
         <div id="data-controls">
             <button id="exportBtn">📎 Exporteer bord</button>
@@ -129,6 +131,11 @@
                 <summary>Kan ik het bord exporteren of opslaan?</summary>
                 <p>Ja! Je kunt op de exportknop klikken om een JSON-bestand op te slaan. Later kun je dit importeren om
                     je bord terug te halen.</p>
+            </details>
+            <details>
+                <summary>Kan ik ook een pad maken?</summary>
+                <p>Ja, je tekent het pad door op de tegels te klikken en er verschijnt een pad. Klik opnieuw op de
+                    tegels en het pad verdwijnt weer.</p>
             </details>
             <details>
                 <summary>Kan ik mijn obstakels aanpassen?</summary>
