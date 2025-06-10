@@ -21,12 +21,17 @@ function bouwGrid(obstakels = [], kaarten = []) {
         if (child.classList.contains('cell')) grid.removeChild(child);
     });
 
-    // Nieuwe cellen maken
-    for (let i = 0; i < gridSize * aantalRijen; i++) {
-        const cell = document.createElement('div');
-        cell.className = 'cell';
-        voegDropHandlersToe(cell);
-        grid.appendChild(cell);
+
+    // Nieuwe cellen maken met data-row en data-col
+    for (let row = 0; row < aantalRijen; row++) {
+        for (let col = 0; col < gridSize; col++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.dataset.row = row;
+            cell.dataset.col = col;
+            voegDropHandlersToe(cell);
+            grid.appendChild(cell);
+        }
     }
 
     updateGridRijen();
@@ -186,20 +191,23 @@ function setupTrash() {
 
 
 // 🔀 Drag & drop handlers voor grid cellen
+// 🔀 Drag & drop handlers voor grid cellen én klik-toggle voor pad
 function voegDropHandlersToe(cell) {
-    cell.addEventListener('dragover', (e) => e.preventDefault());
+    // 1) HTML5 drag/drop voor obstakels en kaarten
+    cell.addEventListener('dragover', e => e.preventDefault());
 
-    cell.addEventListener('drop', (e) => {
+    cell.addEventListener('drop', e => {
         e.preventDefault();
         e.stopPropagation();
 
         window.lastDropX = e.clientX;
         window.lastDropY = e.clientY;
 
-        const id = e.dataTransfer.getData("text/plain");
+        const id = e.dataTransfer.getData('text/plain');
         const draggedElement = document.getElementById(id);
 
         if (draggedElement?.classList.contains('obstacle')) {
+            // obstakel verplaatsen
             const rect = grid.getBoundingClientRect();
             const mouseX = e.clientX - rect.left;
             const mouseY = e.clientY - rect.top;
@@ -211,12 +219,41 @@ function voegDropHandlersToe(cell) {
         }
 
         if (id === 'kaart') {
+            // nieuwe kaart plaatsen
             plaatsKaart(e);
         } else {
+            // obstakel vanuit toolbox
             plaatsObstakel(cell, id);
         }
     });
+
+    // 2) Klik-toggle voor pad-cellen én auto-bochten
+    cell.addEventListener('click', e => {
+        // zet pad aan/uit
+        cell.classList.toggle('pad');
+
+        // update deze cel
+        updatePadDirections(cell);
+
+        // update directe buren
+        const row = parseInt(cell.dataset.row);
+        const col = parseInt(cell.dataset.col);
+        [
+            [row - 1, col],
+            [row + 1, col],
+            [row, col - 1],
+            [row, col + 1]
+        ].forEach(([r, c]) => {
+            if (r >= 0 && r < aantalRijen && c >= 0 && c < gridSize) {
+                const idx = r * gridSize + c;
+                const neighbor = grid.children[idx];
+                updatePadDirections(neighbor);
+            }
+        });
+    });
+
 }
+
 
 // 🧰 Toolbox drag
 document.querySelectorAll('.tool').forEach(tool => {
@@ -423,6 +460,13 @@ document.getElementById('exportBtn').addEventListener('click', () => {
         });
     });
 
+    // PAD-cellen exporteren
+    data.pad = Array.from(document.querySelectorAll('.cell.pad')).map(c => ({
+        row: parseInt(c.dataset.row),
+        col: parseInt(c.dataset.col)
+    }));
+
+
     // 💾 Maak en download bestand
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -472,6 +516,18 @@ document.getElementById('importInput').addEventListener('change', (e) => {
             aantalRijen = Math.ceil((hoogsteTop + 120) / 80);
 
             bouwGrid(data.obstakels, data.kaarten);
+            // —— Pad terugzetten na import —— 
+            if (Array.isArray(data.pad)) {
+                data.pad.forEach(p => {
+                    // bereken index in grid.children
+                    const idx = p.row * gridSize + p.col;
+                    const cell = grid.children[idx];
+                    if (cell) {
+                        cell.classList.add('pad');
+                        updatePadDirections(cell);
+                    }
+                });
+            }
 
         } catch (error) {
             console.error("🚨 Fout tijdens import:", error);
@@ -488,19 +544,93 @@ document.getElementById('importInput').addEventListener('change', (e) => {
 // ➕➖ Rijenbeheer
 document.getElementById('addRowBtn').addEventListener('click', () => {
     if (aantalRijen >= 20) return;
+
+    // 1️⃣ lees bestaande pad-cellen uit
+    const padCoords = Array.from(document.querySelectorAll('.cell.pad')).map(c => ({
+        row: parseInt(c.dataset.row),
+        col: parseInt(c.dataset.col)
+    }));
+
+    // 2️⃣ verhoog rijen en rebuild grid
     aantalRijen++;
     bouwGrid();
+
+    // 3️⃣ pas pad-cellen weer toe
+    padCoords.forEach(p => {
+        // alleen herplaatsen als binnen nieuwe gridhoogte
+        if (p.row < aantalRijen) {
+            const idx = p.row * gridSize + p.col;
+            const cell = grid.children[idx];
+            if (cell) {
+                cell.classList.add('pad');
+                updatePadDirections(cell);
+            }
+        }
+    });
 });
 
 document.getElementById('removeRowBtn').addEventListener('click', () => {
     if (aantalRijen <= 10) return;
+
+    // 1️⃣ lees bestaande pad-cellen uit
+    const padCoords = Array.from(document.querySelectorAll('.cell.pad')).map(c => ({
+        row: parseInt(c.dataset.row),
+        col: parseInt(c.dataset.col)
+    }));
+
+    // 2️⃣ verlaag rijen en rebuild grid
     aantalRijen--;
     bouwGrid();
+
+    // 3️⃣ pas pad-cellen weer toe (alleen die binnen de nieuwe hoogte vallen)
+    padCoords.forEach(p => {
+        if (p.row < aantalRijen) {
+            const idx = p.row * gridSize + p.col;
+            const cell = grid.children[idx];
+            if (cell) {
+                cell.classList.add('pad');
+                updatePadDirections(cell);
+            }
+        }
+    });
 });
 
 function updateGridRijen() {
     grid.style.gridTemplateRows = `repeat(${aantalRijen}, 80px)`;
 }
+
+/**
+ * Updateert de pad-richtingklassen (up/down/left/right) 
+ * voor één cel op basis van aangrenzende .pad-cellen.
+ */
+function updatePadDirections(cell) {
+    // eerst alle classes resetten
+    cell.classList.remove('vertical', 'horizontal');
+
+    if (!cell.classList.contains('pad')) return;
+
+    // lees positie
+    const r = parseInt(cell.dataset.row);
+    const c = parseInt(cell.dataset.col);
+
+    // helper om pad te checken
+    const hasPad = (rr, cc) => {
+        if (rr < 0 || rr >= aantalRijen || cc < 0 || cc >= gridSize) return false;
+        return grid.children[rr * gridSize + cc].classList.contains('pad');
+    };
+
+    // als boven of onder buren pad hebben, teken verticaal
+    if (hasPad(r - 1, c) || hasPad(r + 1, c)) {
+        cell.classList.add('vertical');
+    }
+
+    // als links of rechts buren pad hebben, teken horizontaal
+    if (hasPad(r, c - 1) || hasPad(r, c + 1)) {
+        cell.classList.add('horizontal');
+    }
+}
+
+
 
 // 🛠️ Init
 bouwGrid();

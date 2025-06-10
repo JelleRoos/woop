@@ -388,3 +388,11 @@ body {
     color: #444;
     pointer-events: none;
 }
+
+/* Simpel pad: doorzichtig bruine achtergrond */
+/* Simpel pad: doorzichtig bruine achtergrond + afgeronde hoeken */
+.cell.pad {
+    background-color: rgba(181, 101, 29, 0.3);
+    border-radius: 8px;
+    /* pas de 8px naar wens aan */
+}
