@@ -7,6 +7,8 @@ const obstacleImages = {
     bos: "img/bos.png",
     moeras: "img/moeras.png",
     woestijn: "img/woestijn.png",
+    gat: "img/gat.png",
+    doolhof: "img/doolhof.png",
     brug: "img/brug.png",
     muur: "img/muur.png",
     orc: "img/orc.png"
