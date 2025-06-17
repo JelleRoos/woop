@@ -62,6 +62,7 @@ function bouwGrid(obstakels = [], kaarten = []) {
         tekst.className = 'obstacle-tekst';
         tekst.textContent = obj.tekst || type;
         tekst.contentEditable = true;
+        tekst.setAttribute('spellcheck', 'false');
         newEl.appendChild(tekst);
 
         // obstakel versleepbaar maken
@@ -90,6 +91,7 @@ function bouwGrid(obstakels = [], kaarten = []) {
         const tekst = document.createElement('div');
         tekst.className = 'kaart-tekst';
         tekst.contentEditable = true;
+        tekst.setAttribute('spellcheck', 'false');
         tekst.textContent = k.tekst || '';
         el.appendChild(tekst);
 
@@ -136,6 +138,7 @@ function plaatsObstakel(cel, type, vergrendeld = false, col = null, row = null) 
     tekst.className = 'obstacle-tekst';
     tekst.textContent = type;
     if (!vergrendeld) tekst.contentEditable = true;
+    tekst.setAttribute('spellcheck', 'false');
     item.appendChild(tekst);
 
     if (!col || !row) {
@@ -318,6 +321,7 @@ function plaatsKaart(e) {
     const tekst = document.createElement('div');
     tekst.className = 'kaart-tekst';
     tekst.contentEditable = true;
+    tekst.setAttribute('spellcheck', 'false');
     tekst.textContent =
         icoonType === 'start' ? 'Vanaf dit punt start je' :
             icoonType === 'doel' ? 'waar werk je naartoe' :
